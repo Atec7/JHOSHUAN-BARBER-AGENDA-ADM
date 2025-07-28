@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Barbearia</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #111;
+      color: #fff;
+    }
+    header {
+      background-color: #000;
+      color: #FFD700;
+      padding: 20px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(255,215,0,0.5);
+    }
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h2 {
+      color: #FFD700;
+      margin-top: 40px;
+    }
+    form, .tabela, .servicos-container {
+      background: #1f1f1f;
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 0 12px #FFD70055;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    button {
+      margin-top: 15px;
+      background: #FFD700;
+      color: #000;
+      padding: 12px 20px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px #FFD70080;
+    }
+    button:hover {
+      background: #e6c200;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #444;
+    }
+    th {
+      background: #222;
+      color: #FFD700;
+    }
+    img {
+      max-width: 80px;
+      border-radius: 6px;
+    }
+    .status-aprovado { color: lime; }
+    .status-cancelado { color: red; }
+
+    #btnLimparAgendamentos {
+      background: #c00 !important;
+      color: #fff !important;
+      margin-bottom: 10px !important;
+    }
+    #btnLimparAgendamentos:hover {
+      background: #a00 !important;
+    }
+
+    /* Responsivo */
+    @media (max-width: 768px) {
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+    p{
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>Aplicativo Demonstracao</header>
+  <p>Painel Administrador</p>
+  <main>
+    <h2>Cadastrar / Editar Serviço</h2>
+    <form id="formServico">
+      <label>Corte/Serviço</label>
+      <input type="text" id="nomeServico" required />
+      <label>Preço (R$)</label>
+      <input type="text" id="precoServico" required />
+      <label>Duração (min)</label>
+      <input type="text" id="tempoServico" required />
+      <label>URL da Imagem</label>
+      <input type="text" id="imagemServico" required />
+      <button type="submit" id="btnSalvar">Cadastrar Serviço</button>
+    </form>
+
+    <h2>Serviços Cadastrados</h2>
+    <div class="servicos-container">
+      <table id="tabelaServicos">
+        <thead>
+          <tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Duração</th><th>Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2>Agendamentos</h2>
+    <button id="btnLimparAgendamentos">Limpar Agendamentos</button>
+    <div class="tabela" style="overflow-x:auto;">
+      <table id="tabelaAgendamentos">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Horário</th>
+            <th>Status</th>
+            <th>WhatsApp</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getDatabase, ref, push, set, remove, onValue, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAEtxmBU7vqhR7w1VSi9_QNJQOCmZhNkPA",
+      authDomain: "babearia-jhosuan.firebaseapp.com",
+      databaseURL: "https://babearia-jhosuan-default-rtdb.firebaseio.com/",
+      projectId: "babearia-jhosuan",
+      storageBucket: "babearia-jhosuan.appspot.com",
+      messagingSenderId: "342615273720",
+      appId: "1:342615273720:web:7d78eb757acf64f3ff149f",
+      measurementId: "G-DEH0MNFLQF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const formServico = document.getElementById('formServico');
+    const tabelaServicos = document.querySelector('#tabelaServicos tbody');
+    const tabelaAgendamentos = document.querySelector('#tabelaAgendamentos tbody');
+    const btnSalvar = document.getElementById('btnSalvar');
+
+    let servicoEditando = null;
+
+    formServico.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeServico').value.trim();
+      const preco = document.getElementById('precoServico').value.trim();
+      const tempo = document.getElementById('tempoServico').value.trim();
+      const imagem = document.getElementById('imagemServico').value.trim();
+
+      if (!nome || !preco || !tempo || !imagem) return;
+
+      if (servicoEditando) {
+        await update(ref(db, `servicos/${servicoEditando}`), { nome, preco, tempo, imagem });
+        servicoEditando = null;
+        btnSalvar.textContent = "Cadastrar Serviço";
+      } else {
+        const novoRef = push(ref(db, 'servicos'));
+        await set(novoRef, { nome, preco, tempo, imagem });
+      }
+
+      formServico.reset();
+    });
+
+    onValue(ref(db, 'servicos'), (snapshot) => {
+      tabelaServicos.innerHTML = '';
+      snapshot.forEach(child => {
+        const { nome, preco, tempo, imagem } = child.val();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><img src="${imagem}" /></td>
+          <td>${nome}</td>
+          <td>R$ ${preco}</td>
+          <td>${tempo} min</td>
+          <td>
+            <button onclick="editarServico('${child.key}', '${nome}', '${preco}', '${tempo}', '${imagem}')">Editar</button>
+            <button onclick="removerServico('${child.key}')">Excluir</button>
+          </td>
+        `;
+        tabelaServicos.appendChild(tr);
+      });
+    });
+
+    window.editarServico = (id, nome, preco, tempo, imagem) => {
+      document.getElementById('nomeServico').value = nome;
+      document.getElementById('precoServico').value = preco;
+      document.getElementById('tempoServico').value = tempo;
+      document.getElementById('imagemServico').value = imagem;
+      servicoEditando = id;
+      btnSalvar.textContent = "Salvar Edição";
+    };
+
+    window.removerServico = async (id) => {
+      if (confirm('Deseja excluir este serviço?')) {
+        await remove(ref(db, `servicos/${id}`));
+      }
+    }
+
+    onValue(ref(db, 'agendamentos'), async (snapshot) => {
+      tabelaAgendamentos.innerHTML = '';
+      const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
+      snapshot.forEach(child => {
+        const agendamento = child.val();
+        const servico = servicosSnapshot?.[agendamento.servicoId];
+        const whatsapp = agendamento.whatsapp || '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${agendamento.nome}</td>
+          <td>${servico?.nome || 'Serviço removido'}</td>
+          <td>${new Date(agendamento.horario).toLocaleString('pt-BR')}</td>
+          <td class="${agendamento.status === 'Cancelado' ? 'status-cancelado' : 'status-aprovado'}">${agendamento.status}</td>
+          <td>${whatsapp ? `<a href="https://wa.me/55${whatsapp.replace(/\D/g, '')}" target="_blank" style="color:#00e676"><i class="fab fa-whatsapp"></i> Contato</a>` : '—'}</td>
+          <td>
+            ${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${child.key}')">Cancelar</button>` : ''}
+          </td>
+        `;
+        tabelaAgendamentos.appendChild(tr);
+      });
+    });
+
+    window.cancelarAgendamento = async (id) => {
+      if (confirm('Deseja cancelar este agendamento?')) {
+        await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
+      }
+    };
+  </script>
+</body>
+</html>
