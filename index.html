@@ -8,27 +8,83 @@
   <style>
     body {
       margin: 0; padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       background-color: #111;
       color: #fff;
     }
+
     header {
       background-color: #000;
       color: #FFD700;
       padding: 20px;
       font-size: 1.8rem;
-      font-weight: bold;
       text-align: center;
       box-shadow: 0 2px 8px rgba(255,215,0,0.5);
+      position: relative;
     }
-    main {
+
+    #toggleMenu {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .container {
+      display: flex;
+      position: relative;
+    }
+
+    .menu {
+      width: 220px;
+      background: #000;
       padding: 20px;
-      max-width: 900px;
+      box-shadow: 2px 0 8px #FFD70055;
+      position: absolute;
+      top: 80px;
+      left: 0;
+      height: calc(100vh - 80px);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      transform: translateX(-100%);
+    }
+
+    .menu.menu-open {
+      transform: translateX(0);
+    }
+
+    .menu button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      background: #FFD700;
+      color: #000;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .menu button:hover {
+      background: #e6c200;
+    }
+
+    main {
+      flex: 1;
+      padding: 20px;
+      max-width: 1000px;
       margin: auto;
     }
+
     h2 {
       color: #FFD700;
       margin-top: 40px;
+    }
+
+    p{
+        color: red;
     }
     form, .tabela, .servicos-container {
       background: #1f1f1f;
@@ -37,11 +93,13 @@
       margin-top: 20px;
       box-shadow: 0 0 12px #FFD70055;
     }
+
     label {
       display: block;
       margin: 10px 0 5px;
       font-weight: bold;
     }
+
     input, textarea {
       width: 100%;
       padding: 10px;
@@ -50,6 +108,7 @@
       background: #2a2a2a;
       color: #fff;
     }
+
     button {
       margin-top: 15px;
       background: #FFD700;
@@ -61,102 +120,126 @@
       cursor: pointer;
       box-shadow: 0 4px 8px #FFD70080;
     }
+
     button:hover {
       background: #e6c200;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
+
     th, td {
       padding: 10px;
       text-align: left;
       border-bottom: 1px solid #444;
     }
+
     th {
       background: #222;
       color: #FFD700;
     }
+
     img {
       max-width: 80px;
       border-radius: 6px;
     }
+
     .status-aprovado { color: lime; }
     .status-cancelado { color: red; }
 
     #btnLimparAgendamentos {
-      background: #c00 !important;
+      background: rgb(1, 169, 1) !important;
       color: #fff !important;
       margin-bottom: 10px !important;
     }
+
     #btnLimparAgendamentos:hover {
-      background: #a00 !important;
+      background: rgb(4, 143, 4) !important;
     }
 
-    /* Responsivo */
-    @media (max-width: 768px) {
-      table {
-        display: block;
-        overflow-x: auto;
-      }
-    }
-    p{
-      text-align: center;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <header>JHOSHUAN BARBER SHOP</header>
-  <p>Painel Administrador</p>
-  <main>
-    <h2>Cadastrar / Editar Serviço</h2>
-    <form id="formServico">
-      <label>Corte/Serviço</label>
-      <input type="text" id="nomeServico" required />
-      <label>Preço (R$)</label>
-      <input type="text" id="precoServico" required />
-      <label>Duração (min)</label>
-      <input type="text" id="tempoServico" required />
-      <label>URL da Imagem</label>
-      <input type="text" id="imagemServico" required />
-      <button type="submit" id="btnSalvar">Cadastrar Serviço</button>
-    </form>
+  <header>
+    <span id="toggleMenu">☰</span>
+    JHOSHUAN BARBER SHOP
+  </header>
 
-    <h2>Serviços Cadastrados</h2>
-    <div class="servicos-container">
-      <table id="tabelaServicos">
-        <thead>
-          <tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Duração</th><th>Ações</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+  <div class="container">
+    <div class="menu" id="menuLateral">
+      <button onclick="mostrar('agendamentos')">Agendamentos</button>
+      <button onclick="mostrar('cadastro')">Cadastro de Serviços</button>
+      <button onclick="mostrar('servicos')">Serviços Cadastrados</button>
     </div>
 
-    <h2>Agendamentos</h2>
-    <button id="btnLimparAgendamentos">Limpar Agendamentos</button>
-    <div class="tabela" style="overflow-x:auto;">
-      <table id="tabelaAgendamentos">
-        <thead>
-          <tr>
-            <th>Cliente</th>
-            <th>Serviço</th>
-            <th>Horário</th>
-            <th>Status</th>
-            <th>WhatsApp</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </main>
+    <main>
+      <div id="cadastro" class="hidden">
+        <h2>Cadastrar / Editar Serviço</h2>
+        <form id="formServico">
+          <label>Corte/Serviço</label>
+          <input type="text" id="nomeServico" required />
+          <label>Preço (R$)</label>
+          <input type="text" id="precoServico" required />
+          <label>Duração (min)</label>
+          <input type="text" id="tempoServico" required />
+          <label>URL da Imagem</label>
+          <input type="text" id="imagemServico" required />
+          <button type="submit" id="btnSalvar">Cadastrar Serviço</button>
+        </form>
+      </div>
+
+      <div id="servicos" class="hidden">
+        <h2>Serviços Cadastrados</h2>
+        <div class="servicos-container">
+          <table id="tabelaServicos">
+            <thead>
+              <tr><th>Imagem</th><th>Nome</th><th>Preço</th><th>Duração</th><th>Ações</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="agendamentos">
+        <h2>Agendamentos</h2>
+       
+<button onclick="location.reload()">Mostrar Hoje</button>
+  <button onclick="filtroAgendamento('semana')">Mostrar Semana</button>
+  <button onclick="filtroAgendamento('mes')">Mostrar Mês</button>
+ <button id="btnLimparAgendamentos"><b>Concluir Todos</b></button>
+
+
+        <p> Sempre <b>Concluir Todos</b> ao final do Expediente.</p>
+        <div class="tabela" style="overflow-x:auto;">
+          <table id="tabelaAgendamentos">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Serviço</th>
+                <th>Horário</th>
+                <th>Status</th>
+                <th>WhatsApp</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getDatabase, ref, push, set, remove, onValue, update, onChildAdded } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+  import { getDatabase, ref, push, set, remove, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
-    const firebaseConfig = {
+  const firebaseConfig = {
       apiKey: "AIzaSyAEtxmBU7vqhR7w1VSi9_QNJQOCmZhNkPA",
       authDomain: "babearia-jhosuan.firebaseapp.com",
       databaseURL: "https://babearia-jhosuan-default-rtdb.firebaseio.com/",
@@ -167,76 +250,131 @@
       measurementId: "G-DEH0MNFLQF"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    const formServico = document.getElementById('formServico');
-    const tabelaServicos = document.querySelector('#tabelaServicos tbody');
-    const tabelaAgendamentos = document.querySelector('#tabelaAgendamentos tbody');
-    const btnSalvar = document.getElementById('btnSalvar');
+  const formServico = document.getElementById('formServico');
+  const tabelaServicos = document.querySelector('#tabelaServicos tbody');
+  const tabelaAgendamentos = document.querySelector('#tabelaAgendamentos tbody');
+  const btnSalvar = document.getElementById('btnSalvar');
+  const btnLimparAgendamentos = document.getElementById('btnLimparAgendamentos');
 
-    let servicoEditando = null;
+  let servicoEditando = null;
+  let filtroAgendamentos = 'hoje';
 
-    formServico.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const nome = document.getElementById('nomeServico').value.trim();
-      const preco = document.getElementById('precoServico').value.trim();
-      const tempo = document.getElementById('tempoServico').value.trim();
-      const imagem = document.getElementById('imagemServico').value.trim();
+  const isToday = (dataISO) => {
+    const hoje = new Date();
+    const data = new Date(dataISO);
+    return (
+      data.getFullYear() === hoje.getFullYear() &&
+      data.getMonth() === hoje.getMonth() &&
+      data.getDate() === hoje.getDate()
+    );
+  };
 
-      if (!nome || !preco || !tempo || !imagem) return;
+  const isThisWeek = (dataISO) => {
+    const hoje = new Date();
+    const data = new Date(dataISO);
+    const primeiroDia = new Date(hoje);
+    const ultimoDia = new Date(hoje);
+    primeiroDia.setDate(hoje.getDate() - hoje.getDay() + 1);
+    ultimoDia.setDate(hoje.getDate() + (7 - hoje.getDay()));
+    primeiroDia.setHours(0, 0, 0, 0);
+    ultimoDia.setHours(23, 59, 59, 999);
+    return data >= primeiroDia && data <= ultimoDia;
+  };
 
-      if (servicoEditando) {
-        await update(ref(db, `servicos/${servicoEditando}`), { nome, preco, tempo, imagem });
-        servicoEditando = null;
-        btnSalvar.textContent = "Cadastrar Serviço";
-      } else {
-        const novoRef = push(ref(db, 'servicos'));
-        await set(novoRef, { nome, preco, tempo, imagem });
-      }
+  const isThisMonth = (dataISO) => {
+    const hoje = new Date();
+    const data = new Date(dataISO);
+    return (
+      data.getFullYear() === hoje.getFullYear() &&
+      data.getMonth() === hoje.getMonth()
+    );
+  };
 
-      formServico.reset();
-    });
+  formServico.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nome = document.getElementById('nomeServico').value.trim();
+    const preco = document.getElementById('precoServico').value.trim();
+    const tempo = document.getElementById('tempoServico').value.trim();
+    const imagem = document.getElementById('imagemServico').value.trim();
 
-    onValue(ref(db, 'servicos'), (snapshot) => {
-      tabelaServicos.innerHTML = '';
-      snapshot.forEach(child => {
-        const { nome, preco, tempo, imagem } = child.val();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><img src="${imagem}" /></td>
-          <td>${nome}</td>
-          <td>R$ ${preco}</td>
-          <td>${tempo} min</td>
-          <td>
-            <button onclick="editarServico('${child.key}', '${nome}', '${preco}', '${tempo}', '${imagem}')">Editar</button>
-            <button onclick="removerServico('${child.key}')">Excluir</button>
-          </td>
-        `;
-        tabelaServicos.appendChild(tr);
-      });
-    });
+    if (!nome || !preco || !tempo || !imagem) return;
 
-    window.editarServico = (id, nome, preco, tempo, imagem) => {
-      document.getElementById('nomeServico').value = nome;
-      document.getElementById('precoServico').value = preco;
-      document.getElementById('tempoServico').value = tempo;
-      document.getElementById('imagemServico').value = imagem;
-      servicoEditando = id;
-      btnSalvar.textContent = "Salvar Edição";
-    };
-
-    window.removerServico = async (id) => {
-      if (confirm('Deseja excluir este serviço?')) {
-        await remove(ref(db, `servicos/${id}`));
-      }
+    if (servicoEditando) {
+      await update(ref(db, `servicos/${servicoEditando}`), { nome, preco, tempo, imagem });
+      servicoEditando = null;
+      btnSalvar.textContent = "Cadastrar Serviço";
+    } else {
+      const novoRef = push(ref(db, 'servicos'));
+      await set(novoRef, { nome, preco, tempo, imagem });
     }
 
-    onValue(ref(db, 'agendamentos'), async (snapshot) => {
-      tabelaAgendamentos.innerHTML = '';
-      const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
-      snapshot.forEach(child => {
-        const agendamento = child.val();
+    formServico.reset();
+  });
+
+  onValue(ref(db, 'servicos'), (snapshot) => {
+    tabelaServicos.innerHTML = '';
+    snapshot.forEach(child => {
+      const { nome, preco, tempo, imagem } = child.val();
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><img src="${imagem}" /></td>
+        <td>${nome}</td>
+        <td>R$ ${preco}</td>
+        <td>${tempo} min</td>
+        <td>
+          <button onclick="editarServico('${child.key}', '${nome}', '${preco}', '${tempo}', '${imagem}')">Editar</button>
+          <button onclick="removerServico('${child.key}')">Excluir</button>
+        </td>
+      `;
+      tabelaServicos.appendChild(tr);
+    });
+  });
+
+  window.editarServico = (id, nome, preco, tempo, imagem) => {
+    document.getElementById('nomeServico').value = nome;
+    document.getElementById('precoServico').value = preco;
+    document.getElementById('tempoServico').value = tempo;
+    document.getElementById('imagemServico').value = imagem;
+    servicoEditando = id;
+    btnSalvar.textContent = "Salvar Edição";
+    mostrar('cadastro');
+    document.getElementById('menuLateral').classList.remove('menu-open');
+  };
+
+  window.removerServico = async (id) => {
+    if (confirm('Deseja excluir este serviço?')) {
+      await remove(ref(db, `servicos/${id}`));
+    }
+  };
+
+  async function carregarAgendamentos() {
+    const snapshot = await get(ref(db, 'agendamentos'));
+    const servicosSnapshot = await (await fetch(`https://demobarbearia-4eb73-default-rtdb.firebaseio.com/servicos.json`)).json();
+
+    tabelaAgendamentos.innerHTML = '';
+    if (!snapshot.exists()) return;
+
+    const agendamentos = [];
+
+    snapshot.forEach(child => {
+      const agendamento = child.val();
+      agendamento.id = child.key;
+      agendamentos.push(agendamento);
+    });
+
+    const filtroData = {
+      hoje: isToday,
+      semana: isThisWeek,
+      mes: isThisMonth
+    };
+
+    agendamentos
+      .filter(a => filtroData[filtroAgendamentos](a.horario))
+      .sort((a, b) => new Date(a.horario) - new Date(b.horario))
+      .forEach(agendamento => {
         const servico = servicosSnapshot?.[agendamento.servicoId];
         const whatsapp = agendamento.whatsapp || '';
         const tr = document.createElement('tr');
@@ -247,18 +385,93 @@
           <td class="${agendamento.status === 'Cancelado' ? 'status-cancelado' : 'status-aprovado'}">${agendamento.status}</td>
           <td>${whatsapp ? `<a href="https://wa.me/55${whatsapp.replace(/\D/g, '')}" target="_blank" style="color:#00e676"><i class="fab fa-whatsapp"></i> Contato</a>` : '—'}</td>
           <td>
-            ${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${child.key}')">Cancelar</button>` : ''}
+            ${agendamento.status !== 'Cancelado' ? `<button onclick="cancelarAgendamento('${agendamento.id}')">Cancelar</button>` : ''}
+            <button onclick="concluirAgendamento('${agendamento.id}')">Concluído</button>
           </td>
         `;
         tabelaAgendamentos.appendChild(tr);
       });
-    });
+  }
 
-    window.cancelarAgendamento = async (id) => {
-      if (confirm('Deseja cancelar este agendamento?')) {
-        await update(ref(db, `agendamentos/${id}`), { status: "Cancelado" });
-      }
-    };
-  </script>
+  window.cancelarAgendamento = async (id) => {
+  if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+
+  try {
+    await remove(ref(db, `agendamentos/${id}`));
+  } catch (error) {
+    alert('Erro ao cancelar agendamento: ' + error.message);
+  }
+};
+
+
+  window.concluirAgendamento = async (id) => {
+    try {
+      await remove(ref(db, `agendamentos/${id}`));
+    } catch (error) {
+      alert('Erro ao concluir agendamento: ' + error.message);
+    }
+  };
+
+  btnLimparAgendamentos.addEventListener('click', async () => {
+    if (!confirm('Confirme abaixo por favor!')) return;
+
+    try {
+      const snapshot = await get(ref(db, 'agendamentos'));
+      if (!snapshot.exists()) return;
+
+      const promises = [];
+      snapshot.forEach(child => {
+        const agendamento = child.val();
+        if (isToday(agendamento.horario)) {
+          promises.push(remove(ref(db, `agendamentos/${child.key}`)));
+        }
+      });
+
+      await Promise.all(promises);
+      alert('Todos os agendamentos de hoje foram concluídos.');
+    } catch (error) {
+      alert('Erro ao concluir agendamentos de hoje: ' + error.message);
+    }
+  });
+
+  window.mostrar = (secao) => {
+    ['cadastro', 'agendamentos', 'servicos'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+    document.getElementById(secao).classList.remove('hidden');
+    document.getElementById('menuLateral').classList.remove('menu-open');
+  };
+
+  const toggleMenu = document.getElementById('toggleMenu');
+  const menu = document.getElementById('menuLateral');
+
+  toggleMenu.addEventListener('click', () => {
+    menu.classList.toggle('menu-open');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!menu.contains(e.target) && e.target !== toggleMenu) {
+      menu.classList.remove('menu-open');
+    }
+  });
+
+  // Atualiza agendamentos em tempo real sempre que o banco mudar
+  onValue(ref(db, 'agendamentos'), () => {
+    carregarAgendamentos();
+  });
+
+  window.onload = () => {
+    mostrar('agendamentos');
+    carregarAgendamentos();
+  };
+
+  window.filtroAgendamento = (tipo) => {
+    filtroAgendamentos = tipo;
+    carregarAgendamentos();
+  };
+</script>
+
+
+
 </body>
 </html>
