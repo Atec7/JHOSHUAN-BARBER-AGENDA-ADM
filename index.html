@@ -163,16 +163,91 @@
     .hidden {
       display: none;
     }
+    #notificacao {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #28a745, #218838); /* verde moderno */
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+  padding: 16px 24px;
+  border-radius: 12px;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 128, 0, 0.3);
+  animation: fadeInSlide 0.6s ease-out, subtlePulse 2.5s infinite;
+  max-width: 300px;
+  box-sizing: border-box;
+}
+
+/* Animação de entrada */
+@keyframes fadeInSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulso sutil */
+@keyframes subtlePulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(40, 167, 69, 0.6);
+  }
+}
+#btn-som {
+  background-color: #eee;
+  border: 2px solid #888;
+  color: #333;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#btn-som.ativo {
+  background-color: #28a745;
+  color: white;
+  border-color: #218838;
+}
+
+#btn-som:hover {
+  opacity: 0.9;
+}
+
+
   </style>
 </head>
 <body>
   <header>
     <span id="toggleMenu">☰</span>
     JHOSHUAN BARBER SHOP
+    <!-- Notificação visual -->
+<div id="notificacao" class="hidden">NOVO AGENDAMENTO RECEBIDO!</div>
+
+<!-- Som de alerta -->
+<audio id="alertaSom" preload="auto">
+ <source src="https://dl.dropbox.com/scl/fi/952f47zyjug772i23w4dc/luvvoice.com-20250730-30Urpa.mp3?rlkey=u8ygm2zaoexeklz0cc62146gs&st=4cr7gy8f&dl=0" type="audio/ogg">
+  <source src="https://dl.dropbox.com/scl/fi/952f47zyjug772i23w4dc/luvvoice.com-20250730-30Urpa.mp3?rlkey=u8ygm2zaoexeklz0cc62146gs&st=4cr7gy8f&dl=0" type="audio/mpeg">
+</audio>
+
+
   </header>
 
   <div class="container">
     <div class="menu" id="menuLateral">
+      <button id="btn-som">🔕 Ativar Notificações Sonoras</button>
       <button onclick="mostrar('agendamentos')">Agendamentos</button>
       <button onclick="mostrar('cadastro')">Cadastro de Serviços</button>
       <button onclick="mostrar('servicos')">Serviços Cadastrados</button>
@@ -238,6 +313,11 @@
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
   import { getDatabase, ref, push, set, remove, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+  let somLiberado = false;
+  document.addEventListener('click', () => {
+    somLiberado = true;
+  });
 
   const firebaseConfig = {
       apiKey: "AIzaSyAEtxmBU7vqhR7w1VSi9_QNJQOCmZhNkPA",
@@ -413,26 +493,33 @@
   };
 
   btnLimparAgendamentos.addEventListener('click', async () => {
-    if (!confirm('Confirme abaixo por favor!')) return;
+  if (!confirm('Confirme abaixo por favor!')) return;
 
-    try {
-      const snapshot = await get(ref(db, 'agendamentos'));
-      if (!snapshot.exists()) return;
+  try {
+    const snapshot = await get(ref(db, 'agendamentos'));
+    if (!snapshot.exists()) return;
 
-      const promises = [];
-      snapshot.forEach(child => {
-        const agendamento = child.val();
-        if (isToday(agendamento.horario)) {
-          promises.push(remove(ref(db, `agendamentos/${child.key}`)));
-        }
-      });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Zera horas para comparar apenas a data
 
-      await Promise.all(promises);
-      alert('Todos os agendamentos de hoje foram concluídos.');
-    } catch (error) {
-      alert('Erro ao concluir agendamentos de hoje: ' + error.message);
-    }
-  });
+    const promises = [];
+    snapshot.forEach(child => {
+      const agendamento = child.val();
+      const agendamentoDate = new Date(agendamento.horario);
+      agendamentoDate.setHours(0, 0, 0, 0); // Zera também aqui
+
+      if (agendamentoDate <= today) {
+        promises.push(remove(ref(db, `agendamentos/${child.key}`)));
+      }
+    });
+
+    await Promise.all(promises);
+    alert('Todos os agendamentos até hoje foram concluídos.');
+  } catch (error) {
+    alert('Erro ao concluir agendamentos: ' + error.message);
+  }
+});
+
 
   window.mostrar = (secao) => {
     ['cadastro', 'agendamentos', 'servicos'].forEach(id => {
@@ -456,9 +543,65 @@
   });
 
   // Atualiza agendamentos em tempo real sempre que o banco mudar
-  onValue(ref(db, 'agendamentos'), () => {
-    carregarAgendamentos();
+let agendamentosAnteriores = {};
+let primeiraLeitura = true;
+
+onValue(ref(db, 'agendamentos'), (snapshot) => {
+  const novosAgendamentos = {};
+  snapshot.forEach(child => {
+    novosAgendamentos[child.key] = child.val();
   });
+
+  if (!primeiraLeitura) {
+    const novosIds = Object.keys(novosAgendamentos);
+    const antigosIds = Object.keys(agendamentosAnteriores);
+
+    const novosRegistros = novosIds.filter(id => !antigosIds.includes(id));
+
+    if (novosRegistros.length > 0) {
+      mostrarNotificacao();
+    }
+  }
+
+  agendamentosAnteriores = novosAgendamentos;
+  primeiraLeitura = false;
+  carregarAgendamentos();
+});
+
+function mostrarNotificacao() {
+  const audio = document.getElementById('alertaSom');
+  const noti = document.getElementById('notificacao');
+
+  if (somLiberado && audio) {
+    audio.volume = 1;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.warn('Som não tocado automaticamente:', error.message);
+      });
+    }
+  } else {
+    console.warn('Som bloqueado por falta de interação do usuário.');
+  }
+
+  noti.classList.remove('hidden');
+  setTimeout(() => noti.classList.add('hidden'), 6000);
+}
+
+const botaoSom = document.getElementById('btn-som');
+
+botaoSom.addEventListener('click', () => {
+  botaoSom.classList.toggle('ativo');
+
+  if (botaoSom.classList.contains('ativo')) {
+    botaoSom.textContent = '🔔 Notificações Sonoras Ativadas';
+    // Aqui você pode ativar o som de fato
+  } else {
+    botaoSom.textContent = '🔕 Ativar Notificações Sonoras';
+    // E aqui desativar
+  }
+});
+
 
   window.onload = () => {
     mostrar('agendamentos');
