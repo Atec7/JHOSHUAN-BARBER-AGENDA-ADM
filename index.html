@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8" name="theme-color" content="#FFD700"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin - JHOSHUAN BARBER SHOP</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="manifest" href="manifest.json" />
   <style>
     body {
       margin: 0; padding: 0;
@@ -432,7 +433,7 @@
 
   async function carregarAgendamentos() {
     const snapshot = await get(ref(db, 'agendamentos'));
-    const servicosSnapshot = await (await fetch(`https://babearia-jhosuan-default-rtdb.firebaseio.com/servicos.json`)).json();
+    const servicosSnapshot = await (await fetch(`babearia-jhosuan-default-rtdb.firebaseio.com/servicos.json`)).json();
 
     tabelaAgendamentos.innerHTML = '';
     if (!snapshot.exists()) return;
@@ -612,6 +613,43 @@ botaoSom.addEventListener('click', () => {
     filtroAgendamentos = tipo;
     carregarAgendamentos();
   };
+
+  // Monitorar o nó "notificacoes" no Firebase
+let notificacoesAnteriores = {};
+let primeiraLeituraNotif = true;
+
+onValue(ref(db, 'notificacoes'), (snapshot) => {
+  const novasNotificacoes = {};
+  snapshot.forEach(child => {
+    novasNotificacoes[child.key] = child.val();
+  });
+
+  if (!primeiraLeituraNotif) {
+    const novosIds = Object.keys(novasNotificacoes);
+    const antigosIds = Object.keys(notificacoesAnteriores);
+
+    const novasEntradas = novosIds.filter(id => !antigosIds.includes(id));
+
+    if (novasEntradas.length > 0) {
+      tocarAudioNotificacao();
+    }
+  }
+
+  notificacoesAnteriores = novasNotificacoes;
+  primeiraLeituraNotif = false;
+});
+
+// Toca o novo áudio da notificação
+function tocarAudioNotificacao() {
+  const som = new Audio("https://dl.dropbox.com/scl/fi/nbwejvu6r6mvcdlp0ljte/luvvoice.com-20250801-pNuFKJ.mp3?rlkey=4dvy1vzxnhfdaa1pyofegmzuh&st=t20b5r26&dl=0");
+  som.volume = 1;
+  if (somLiberado) {
+    som.play().catch(err => {
+      console.warn("Erro ao tocar áudio de notificação:", err.message);
+    });
+  }
+}
+
 </script>
 <script>
   if ('serviceWorker' in navigator) {
@@ -622,7 +660,6 @@ botaoSom.addEventListener('click', () => {
     });
   }
 </script>
-
 
 
 </body>
