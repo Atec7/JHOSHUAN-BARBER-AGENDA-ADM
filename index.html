@@ -433,7 +433,7 @@
 
   async function carregarAgendamentos() {
     const snapshot = await get(ref(db, 'agendamentos'));
-    const servicosSnapshot = await (await fetch(`babearia-jhosuan-default-rtdb.firebaseio.com/servicos.json`)).json();
+    const servicosSnapshot = await (await fetch(`https://babearia-jhosuan-default-rtdb.firebaseio.com/servicos.json`)).json();
 
     tabelaAgendamentos.innerHTML = '';
     if (!snapshot.exists()) return;
